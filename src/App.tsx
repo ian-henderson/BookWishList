@@ -88,7 +88,7 @@ export default function App() {
           </div>
         </div>
         <div className="MessageArea">
-          &#123; isFetching: {pagination.isFetching ? "true" : "false"}, page:{" "}
+          &#123; loading: {pagination.isFetching ? "true" : "false"}, page:{" "}
           {pagination.pageCount} &#125;
         </div>
         <BookGrid
