@@ -1,0 +1,38 @@
+@import "./Global.sass"
+
+.App
+    display: flex
+    flex-direction: column
+    align-items: center
+    background-image: url(assets/background.png)
+
+    .Page
+        display: flex
+        flex-direction: column
+        padding: 1rem
+
+        & > div
+            width: 100%
+            margin-bottom: 1rem
+
+        .Info
+            display: flex
+            flex-direction: row-reverse
+
+            .ViewBox
+                background: white
+                padding: 1rem
+                border: $border
+                width: 5rem
+                text-align: center
+
+        .MessageArea
+            background: white
+            border: $border
+            padding: 1rem 0
+            text-align: center
+
+/* small devices */
+@media only screen and (min-width: 700px)
+    .Page
+        width: 700px
