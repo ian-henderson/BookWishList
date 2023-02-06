@@ -8,30 +8,41 @@ export enum PaginationActionType {
 }
 
 export type PaginationState<Entity> = {
-  entities: Entity[];
+  entities: { [key: string]: Entity };
+  keys: string[];
   isFetching: boolean;
   pageCount: number;
   type: PaginationActionType;
 };
 
-export type PaginationAction<Entity> = {
-  payload?: Entity[];
-  type: PaginationActionType;
-};
-
 export const initialState = {
-  entities: [],
+  keys: [],
+  entities: {},
   isFetching: false,
   pageCount: 0,
   type: PaginationActionType.Init,
 };
 
+export type PaginationAction<Entity> = {
+  entities?: Entity[];
+  type: PaginationActionType;
+};
+
+type MapEntityToKey<Entity> = (e: Entity) => string;
+
+// Dispatch Function Types
 type DispatchFailure = () => void;
 type DispatchInit = () => void;
 type DispatchRequest = () => void;
-type DispatchSuccess<Entity> = (payload: Entity[]) => void;
+type DispatchSuccess<Entity> = (entities: Entity[]) => void;
 
-export default function usePagination<Entity>(): [
+interface IUsePagination<Entity> {
+  mapEntityToKey?: MapEntityToKey<Entity>;
+}
+
+export default function usePagination<Entity extends { key: string }>({
+  mapEntityToKey = (e: Entity) => e.key,
+}: IUsePagination<Entity> = {}): [
   PaginationState<Entity>,
   DispatchFailure,
   DispatchInit,
@@ -40,7 +51,7 @@ export default function usePagination<Entity>(): [
 ] {
   const [state, dispatch] = useReducer<
     Reducer<PaginationState<Entity>, PaginationAction<Entity>>
-  >(paginationReducer, initialState);
+  >(paginationReducer(mapEntityToKey), initialState);
 
   function dispatchFailure() {
     dispatch({ type: PaginationActionType.Failure });
@@ -54,8 +65,8 @@ export default function usePagination<Entity>(): [
     dispatch({ type: PaginationActionType.Request });
   }
 
-  function dispatchSuccess(payload: Entity[]) {
-    dispatch({ payload, type: PaginationActionType.Success });
+  function dispatchSuccess(entities: Entity[]) {
+    dispatch({ entities, type: PaginationActionType.Success });
   }
 
   return [
@@ -67,27 +78,35 @@ export default function usePagination<Entity>(): [
   ];
 }
 
-export function paginationReducer<Entity>(
-  state: PaginationState<Entity> = initialState,
-  { payload, type }: PaginationAction<Entity>
-) {
-  if (type === PaginationActionType.Failure)
-    return { ...state, isFetching: false, type };
+export const paginationReducer =
+  <Entity>(mapEntityToKey: MapEntityToKey<Entity>) =>
+  (
+    state: PaginationState<Entity> = initialState,
+    { entities = [], type }: PaginationAction<Entity>
+  ) => {
+    if (type === PaginationActionType.Failure)
+      return { ...state, isFetching: false, type };
 
-  if (type === PaginationActionType.Init) return { ...state, type };
+    if (type === PaginationActionType.Init) return { ...state, type };
 
-  if (type === PaginationActionType.Request)
-    return { ...state, isFetching: true, type };
+    if (type === PaginationActionType.Request)
+      return { ...state, isFetching: true, type };
 
-  if (type === PaginationActionType.Success) {
-    return {
-      ...state,
-      entities: [...state.entities, ...(payload || [])],
-      isFetching: false,
-      pageCount: state.pageCount + 1,
-      type,
-    };
-  }
+    if (type === PaginationActionType.Success) {
+      return {
+        ...state,
+        entities: {
+          ...state.entities,
+          ...Object.fromEntries(
+            entities.map((e: Entity) => [mapEntityToKey(e), e])
+          ),
+        },
+        isFetching: false,
+        keys: [...state.keys, ...entities.map(mapEntityToKey)],
+        pageCount: state.pageCount + 1,
+        type,
+      };
+    }
 
-  return state;
-}
+    return state;
+  };

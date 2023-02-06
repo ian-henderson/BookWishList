@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import "./App.sass";
 import BookGrid from "./Components/BookGrid/BookGrid";
 import usePagination, { PaginationActionType } from "./hooks/usePagination";
-import { Work } from "./types";
 import formatNames from "./utils/formatNames";
+import "./App.sass";
+import { Work } from "./types";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 12;
 
 export default function App() {
   const [
@@ -15,7 +15,7 @@ export default function App() {
     dispatchInit,
     dispatchRequest,
     dispatchSuccess,
-  ] = usePagination<Work>();
+  ] = usePagination<Work & { isInWishList?: boolean }>();
   const [wishListMap, setWishListMap] = useState<{ [key: string]: boolean }>(
     {}
   );
@@ -31,9 +31,7 @@ export default function App() {
 
     fetch(url)
       .then((response) => response.json())
-      .then((result) => {
-        dispatchSuccess(result.works);
-      })
+      .then((result) => dispatchSuccess(result.works))
       .catch((error) => {
         console.error(error);
         dispatchFailure();
@@ -42,19 +40,18 @@ export default function App() {
 
   function renderItem({
     authors,
-    inWishList,
+    isInWishList,
     key,
     title,
-  }: Work & { inWishList: boolean }) {
+  }: Work & { isInWishList?: boolean }) {
     function handleAddOrRemoveClick() {
       setWishListMap((previousWishListMap) => {
-        // remove from state
-        if (previousWishListMap[key])
+        // removes key to trigger refresh (as opposed to just changing value)
+        if (isInWishList)
           return Object.fromEntries(
             Object.entries(previousWishListMap).filter(([k]) => k !== key)
           );
 
-        // add to state
         return { ...previousWishListMap, [key]: true };
       });
     }
@@ -72,12 +69,21 @@ export default function App() {
             className="AddOrRemoveButton"
             onClick={handleAddOrRemoveClick}
           >
-            {inWishList ? "Remove" : "Add"}
+            {isInWishList ? "Remove" : "Add"}
           </button>
         </div>
       </div>
     );
   }
+
+  const books = useMemo(
+    () =>
+      pagination.keys.map((key) => ({
+        ...pagination.entities[key],
+        isInWishList: wishListMap[key],
+      })),
+    [pagination.entities, pagination.keys, wishListMap]
+  );
 
   return (
     <main className="App">
@@ -91,11 +97,7 @@ export default function App() {
           &#123; loading: {pagination.isFetching ? "true" : "false"}, page:{" "}
           {pagination.pageCount} &#125;
         </div>
-        <BookGrid
-          books={pagination.entities}
-          loadMoreItems={dispatchInit}
-          {...{ renderItem, wishListMap }}
-        />
+        <BookGrid loadMoreItems={dispatchInit} {...{ books, renderItem }} />
       </div>
     </main>
   );

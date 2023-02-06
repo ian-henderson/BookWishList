@@ -51,7 +51,7 @@ describe("hooks/usePagination", () => {
     act(() => result.current[4]([]));
     expect(result.current[0]).toEqual({
       ...initialState,
-      entities: [],
+      entities: {},
       isFetching: false,
       pageCount: 1,
       type: PaginationActionType.Success,
