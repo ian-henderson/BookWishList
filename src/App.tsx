@@ -16,6 +16,7 @@ export default function App() {
     dispatchRequest,
     dispatchSuccess,
   ] = usePagination<Work & { isInWishList?: boolean }>();
+
   const [wishListMap, setWishListMap] = useState<{ [key: string]: boolean }>(
     {}
   );
