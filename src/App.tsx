@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import BookGrid from "./Components/BookGrid/BookGrid";
 import usePagination, { PaginationActionType } from "./hooks/usePagination";
@@ -6,7 +6,7 @@ import formatNames from "./utils/formatNames";
 import "./App.sass";
 import { Work } from "./types";
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 45;
 
 export default function App() {
   const [
@@ -76,14 +76,10 @@ export default function App() {
     );
   }
 
-  const books = useMemo(
-    () =>
-      pagination.keys.map((key) => ({
-        ...pagination.entities[key],
-        isInWishList: wishListMap[key],
-      })),
-    [pagination.entities, pagination.keys, wishListMap]
-  );
+  const books = pagination.keys.map((key) => ({
+    ...pagination.entities[key],
+    isInWishList: wishListMap[key],
+  }));
 
   return (
     <main className="App">
